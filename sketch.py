@@ -3,19 +3,16 @@ import cadquery as cq
 from ocp_vscode import *
 #%%
 
-result = (
-    cq.Sketch()
-    .trapezoid(4, 3, 90)
-    .vertices()
-    .circle(0.5, mode="s")
-    .reset()
-    .vertices()
-    .fillet(0.25)
-    .reset()
-    .rarray(0.6, 1, 5, 1)
-    .slot(1.5, 0.4, mode="s", angle=90)
-    .reset()
-)
+shape1 = cq.Sketch().trapezoid(4, 3, 90)
+vertices1 = shape1.vertices()
+circle1 = vertices1.circle(0.5, mode="s")
+reset1 = circle1.reset()
+vertices2 = reset1.vertices()
+fillet1 = vertices2.fillet(0.25)
+reset2 = fillet1.reset()
+array_shape = reset2.rarray(0.6, 1, 5, 1)
+slot1 = array_shape.slot(1.5, 0.4, mode="s", angle=90)
+result = slot1.reset()
 show(result)
 # %%
 
