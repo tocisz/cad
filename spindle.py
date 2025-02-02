@@ -31,31 +31,30 @@ ls = np.append(ls, 51) # total length
 notch_point = (l[0] + l[1]/2) / ls[2]
 fr = 0.5 # default fillet radius
 #%%
-s = cq.Sketch()
+s1 = cq.Sketch()
 # constuction segments
-s = s.segment((0, 0),        (0, ls[2]),    "e1", True) # bottom left
-s = s.segment((r[0], 0),     (r[2], ls[2]), "e2", True) # bottom right
-s = s.segment((0, ls[4]),    (r[4], ls[4]), "e3", True) # spike base
-s = s.segment((0, ls[5]),    (r[5], ls[5]), "e4", True) # spike top
-s = s.segment((0, ls[2]),    (r[3], ls[2]), "e5", True) # spool base bottom
-s = s.segment((r[3], ls[2]), (r[3], ls[3]), "e6", True) # spool right
-s = s.segment((0, l[0]), (1, l[0]), "middle", True)
-s = fix(s, [f"e{i}" for i in range(1,7)])
-s = s.constrain("middle", "e1", "Distance", (0.0, notch_point, 0.0))
-s = s.constrain("middle", "e2", "Distance", (1.0, notch_point, 0.0))
-s = s.solve()
-s = s.select("e1", "e2").hull()
-s = s.select("e3", "e4").hull()
-s = s.reset().vertices(">(1,1,0)").fillet(r[5])
-s = s.reset().vertices(">X", tag="middle").rect(2*w[1], l[1], mode="s")
-s = s.select("e3", "e5", "e6").hull(tag="base")
-s = s.reset().vertices(">(1,1,0)", tag="base").fillet(fr)
-s = s.clean()
-s = s.reset().vertices("<<X[2]").fillet(fr)
-# show(s)
-# show(s, position=(0, 0, 90), target=(0, 25, 0))
+s1 = s1.segment((0, 0),        (0, ls[2]),    "e1", True) # bottom left
+s1 = s1.segment((r[0], 0),     (r[2], ls[2]), "e2", True) # bottom right
+s1 = s1.segment((0, ls[4]),    (r[4], ls[4]), "e3", True) # spike base
+s1 = s1.segment((0, ls[5]),    (r[5], ls[5]), "e4", True) # spike top
+s1 = s1.segment((0, ls[2]),    (r[3], ls[2]), "e5", True) # spool base bottom
+s1 = s1.segment((r[3], ls[2]), (r[3], ls[3]), "e6", True) # spool right
+s1 = s1.segment((0, l[0]), (1, l[0]), "middle", True)
+s1 = fix(s1, [f"e{i}" for i in range(1,7)])
+s1 = s1.constrain("middle", "e1", "Distance", (0.0, notch_point, 0.0))
+s1 = s1.constrain("middle", "e2", "Distance", (1.0, notch_point, 0.0))
+s1 = s1.solve()
+s1 = s1.select("e1", "e2").hull()
+s1 = s1.select("e3", "e4").hull()
+s1 = s1.reset().vertices(">(1,1,0)").fillet(r[5])
+s1 = s1.reset().vertices(">X", tag="middle").rect(2*w[1], l[1], mode="s")
+s1 = s1.select("e3", "e5", "e6").hull(tag="base")
+s1 = s1.reset().vertices(">(1,1,0)", tag="base").fillet(fr)
+s1 = s1.clean()
+s1 = s1.reset().vertices("<<X[2]").fillet(fr)
+# show(s1, position=(0, 0, 90), target=(0, 25, 0))
 
-body1 = cq.Workplane("XZ").placeSketch(s).revolve()
+body1 = cq.Workplane("XZ").placeSketch(s1).revolve()
 # show(body1)
 
 #%%
@@ -99,7 +98,7 @@ s = s.reset().vertices("<Y").chamfer(fr3)
 s = s.reset().vertices(">>Y[1]").fillet(2*fr3)
 s = s.reset().vertices(">>Y[2]").fillet(2*fr3)
 
-# show(s, position=(0, 0, 90), target=(0, 25, 0))
+# show(s1, s, position=(0, 0, 90), target=(0, 25, 0))
 
 # %%
 body2 = cq.Workplane("XZ").placeSketch(s).revolve()
@@ -108,6 +107,17 @@ body2 = cq.Workplane("XZ").placeSketch(s).revolve()
 
 show(body1, body2)
 
+#%%
+
+glue = 0.05
+# Create a half-space block that covers only y > 0
+clip_box = cq.Workplane("XY").box(20, 20, 120).translate((0, 10+glue, 0))  # Positioned to cover y > 0
+
+# Intersect the solid with the clipping box
+body3 = body1.intersect(clip_box)
+show(body3)
+
+body1.export("half.step")
 #%%
 cq.exporters.export(body1, "spindle1.stl")
 cq.exporters.export(body1, "spindle1.step")
