@@ -80,7 +80,7 @@ p2 = (r1+t2, ls[4])
 s = s.segment(p1, p2, "outer")
 s = s.segment(p2, e_ref1[0], "bottom") # base bottom
 l1 = horizontal_line(ls[4]+h)
-p1 = point_tuple(intersection_of_lines(line_from_points(*map(npoint, e_ref1)),l1))
+p1 = intersection_of_lines(line_from_points(*e_ref1),l1)
 s = s.segment(e_ref1[0], p1, "inner")
 p3 = move(p1,(ttop,0))
 s = s.segment(p1, p3, "h1") # inner rim
@@ -98,7 +98,7 @@ s = s.reset().vertices("<Y").chamfer(fr3)
 s = s.reset().vertices(">>Y[1]").fillet(2*fr3)
 s = s.reset().vertices(">>Y[2]").fillet(2*fr3)
 
-# show(s1, s, position=(0, 0, 90), target=(0, 25, 0))
+show(s1, s, position=(0, 0, 90), target=(0, 25, 0))
 
 # %%
 body2 = cq.Workplane("XZ").placeSketch(s).revolve()

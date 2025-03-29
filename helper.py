@@ -28,7 +28,7 @@ def line_from_points(p1, p2):
     Compute the line representation l = [a, b, c] given two points p1 and p2.
     """
     # Cross product to get line equation coefficients
-    return np.cross(p1, p2)
+    return np.cross(npoint(p1), npoint(p2))
 
 def intersection_of_lines(l1, l2):
     """
@@ -41,7 +41,7 @@ def intersection_of_lines(l1, l2):
     if p[2] != 0:
         p = p / p[2]
     
-    return p
+    return point_tuple(p)
 
 def vertical_line(x1):
     """
