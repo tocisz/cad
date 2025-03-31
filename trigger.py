@@ -5,8 +5,8 @@ import math
 #%%
 w = 64*MM
 r = 20*MM
-h = 5*MM
-d = 2*MM
+h = 5.2*MM
+d = 2.5*MM
 angle = math.degrees(math.atan2(h, w/2))
 
 with BuildSketch() as outline:
