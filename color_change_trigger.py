@@ -28,16 +28,20 @@ slot1_l = 9*MM
 slot1_d = 5.5*MM
 slot1_d2 = 8*MM
 slot1_loc = Vector(-0.8*MM, 3*MM) # from bottom right
-slot1_separation = 7*MM # approximataly
-slot1_locX = Vector(-slot1_d2/2, slot1_loc.Y+slot1_d/2)
+slot1_separation = 8*MM # approximataly, not quite right
+slot1_locX = Vector(-slot1_d2/2-slot1_loc.X, slot1_loc.Y+slot1_d/2)
 slot2_d = slot1_d
 slot2_left = (14.4-7.3)*MM
+slot2_bottom = 12*MM
+slot2_loc = Vector(slot2_d/2, slot2_bottom)
+slot2_width = slot2_left+slot2_d/2 # goes d/2 outside on right
 drill1_r = 3.5*MM # measure..
 drill2_slot1_distance = 37.7
 drill2_d1 = 5*MM
 drill2_d2 = 8*MM
 drill2_loc = Vector(-6.2*MM-slot1_d/2,drill2_slot1_distance+(slot1_d+drill2_d1)/2)
-drill3_r = 4.5*MM
+drill3_d = 4.5*MM
+drill3_loc = Vector(-1.5*MM, 46.5*MM)
 with BuildPart(Plane.XZ) as main:
     add(from_side.sketch)
     extrude(amount=-l)
@@ -58,6 +62,10 @@ with BuildPart(Plane.XZ) as main:
             SlotOverall(width=slot1_l, height=slot1_d, align=(Align.MAX, Align.MIN))
         with Locations(drill2_loc):
             Circle(radius=drill2_d1/2)
+        with Locations(slot2_loc):
+            SlotOverall(width=slot2_width, height=slot2_d, align=(Align.MAX, Align.MIN))
+        with Locations(drill3_loc):
+            Circle(radius=drill3_d/2, align=(Align.MAX, Align.MIN))
     extrude(amount=h2, mode=Mode.SUBTRACT)
 
     with BuildSketch(Plane(origin=Vector(Z=h0))) as top_drilling:
