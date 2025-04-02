@@ -1,6 +1,6 @@
 # %%
 from build123d import *
-from ocp_vscode import *
+from ocp_vscode import show
 import math
 # %%
 shapes = import_svg("drawing.svg", label_by='inkscape:label')
@@ -22,15 +22,21 @@ with BuildSketch() as from_side:
     Polygon((0,0),(0,h2),(w1,h1),(w,h1),(w,0), align=(Align.MAX, Align.MIN))
 show(from_side.sketch)
 # %%
+h0 = 1.6*MM
 cutout_h = 12*MM
 slot1_l = 9*MM
-slot1_r1 = 5.5*MM
+slot1_d = 5.5*MM
+slot1_d2 = 8*MM
 slot1_loc = Vector(-0.8*MM, 3*MM) # from bottom right
-slot2_r = slot1_r1
+slot1_separation = 7*MM # approximataly
+slot1_locX = Vector(-slot1_d2/2, slot1_loc.Y+slot1_d/2)
+slot2_d = slot1_d
 slot2_left = (14.4-7.3)*MM
-slot1_slot3_distance = 37.7
 drill1_r = 3.5*MM # measure..
-drill2_r = 5*MM
+drill2_slot1_distance = 37.7
+drill2_d1 = 5*MM
+drill2_d2 = 8*MM
+drill2_loc = Vector(-6.2*MM-slot1_d/2,drill2_slot1_distance+(slot1_d+drill2_d1)/2)
 drill3_r = 4.5*MM
 with BuildPart(Plane.XZ) as main:
     add(from_side.sketch)
@@ -49,10 +55,17 @@ with BuildPart(Plane.XZ) as main:
 
     with BuildSketch() as bottom_drilling:
         with Locations(slot1_loc):
-            SlotOverall(slot1_l, slot1_r1, align=(Align.MAX, Align.MIN))
+            SlotOverall(width=slot1_l, height=slot1_d, align=(Align.MAX, Align.MIN))
+        with Locations(drill2_loc):
+            Circle(radius=drill2_d1/2)
     extrude(amount=h2, mode=Mode.SUBTRACT)
 
-
+    with BuildSketch(Plane(origin=Vector(Z=h0))) as top_drilling:
+        with Locations(slot1_locX):
+            SlotCenterToCenter(center_separation=slot1_separation, height=slot1_d2)
+        with Locations(drill2_loc):
+            Circle(radius=drill2_d2/2)
+    extrude(amount=h2, mode=Mode.SUBTRACT)
 show(main.part)
 # %%
 export_step(main.part, "color_change_trigger.step")
