@@ -49,7 +49,7 @@ with BuildPart(Plane.XZ) as main:
 
     with BuildSketch() as bottom_drilling:
         with Locations(slot1_loc):
-            SlotOverall(slot1_l, slot1_r, align=(Align.MAX, Align.MIN))
+            SlotOverall(slot1_l, slot1_r1, align=(Align.MAX, Align.MIN))
     extrude(amount=h2, mode=Mode.SUBTRACT)
 
 
