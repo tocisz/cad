@@ -35,7 +35,8 @@ slot2_left = (14.4-7.3)*MM
 slot2_bottom = 12*MM
 slot2_loc = Vector(slot2_d/2, slot2_bottom)
 slot2_width = slot2_left+slot2_d/2 # goes d/2 outside on right
-drill1_r = 3.5*MM # measure..
+drill1_d = 3.5*MM # measure..
+drill1_loc = Vector(-2*MM, 26*MM)
 drill2_slot1_distance = 37.7
 drill2_d1 = 5*MM
 drill2_d2 = 8*MM
@@ -64,6 +65,8 @@ with BuildPart(Plane.XZ) as main:
             Circle(radius=drill2_d1/2)
         with Locations(slot2_loc):
             SlotOverall(width=slot2_width, height=slot2_d, align=(Align.MAX, Align.MIN))
+        with Locations(drill1_loc):
+            Circle(radius=drill1_d/2, align=(Align.MAX, Align.MIN))
         with Locations(drill3_loc):
             Circle(radius=drill3_d/2, align=(Align.MAX, Align.MIN))
     extrude(amount=h2, mode=Mode.SUBTRACT)
