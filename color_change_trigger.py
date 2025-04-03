@@ -43,6 +43,13 @@ drill2_d2 = 8*MM
 drill2_loc = Vector(-6.2*MM-slot1_d/2,drill2_slot1_distance+(slot1_d+drill2_d1)/2)
 drill3_d = 4.5*MM
 drill3_loc = Vector(-1.5*MM, 46.5*MM)
+
+# rectangle pocket on the bottom
+pocket_depth = 1.3*MM
+pocket_width1, pocket_height1 = 13*MM, 10*MM
+pocket_width2, pocket_height2 = 11*MM, 8*MM
+pocket_loc = Vector(0, 27*MM)
+
 with BuildPart(Plane.XZ) as main:
     add(from_side.sketch)
     extrude(amount=-l)
@@ -54,7 +61,7 @@ with BuildPart(Plane.XZ) as main:
             add(from_bottom.face(), rotation=180)
     extrude(amount=-h2, mode=Mode.INTERSECT)
 
-    with BuildSketch(Plane(origin=Vector(Z=h1))) as rect_cut:
+    with BuildSketch(Plane.XY.offset(h1)) as rect_cut:
         Rectangle(width=w, height=cutout_h,align=(Align.MAX, Align.MIN))
     extrude(amount=h2-h1, mode=Mode.SUBTRACT)
 
@@ -71,12 +78,22 @@ with BuildPart(Plane.XZ) as main:
             Circle(radius=drill3_d/2, align=(Align.MAX, Align.MIN))
     extrude(amount=h2, mode=Mode.SUBTRACT)
 
-    with BuildSketch(Plane(origin=Vector(Z=h0))) as top_drilling:
+    with BuildSketch(Plane.XY.offset(h0)) as top_drilling:
         with Locations(slot1_locX):
+            # TODO translate to SlotOverall, use same alignment
             SlotCenterToCenter(center_separation=slot1_separation, height=slot1_d2)
         with Locations(drill2_loc):
             Circle(radius=drill2_d2/2)
     extrude(amount=h2, mode=Mode.SUBTRACT)
+
+    with BuildSketch() as bottom_pocket1:
+        with Locations(pocket_loc)
+            Rectangle(width=pocket_width1, height=pocket_height1, align=(Align.MAX, Align.MIN))
+    with BuildSketch() as bottom_pocket2:
+        with Locations(bottom_pocket1.face().center())
+            Rectangle(width=pocket_width2, height=pocket_height2)
+    loft(bottom_pocket1, bottom_pocket2, mode=Mode.SUBTRACT)
+
 show(main.part)
 # %%
 export_step(main.part, "color_change_trigger.step")
