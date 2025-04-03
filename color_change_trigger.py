@@ -87,12 +87,12 @@ with BuildPart(Plane.XZ) as main:
     extrude(amount=h2, mode=Mode.SUBTRACT)
 
     with BuildSketch() as bottom_pocket1:
-        with Locations(pocket_loc)
+        with Locations(pocket_loc):
             Rectangle(width=pocket_width1, height=pocket_height1, align=(Align.MAX, Align.MIN))
-    with BuildSketch() as bottom_pocket2:
-        with Locations(bottom_pocket1.face().center())
+    with BuildSketch(Plane.XY.offset(pocket_depth)) as bottom_pocket2:
+        with Locations(bottom_pocket1.face().center()):
             Rectangle(width=pocket_width2, height=pocket_height2)
-    loft(bottom_pocket1, bottom_pocket2, mode=Mode.SUBTRACT)
+    loft([bottom_pocket1.sketch.face(), bottom_pocket2.sketch.face()], mode=Mode.SUBTRACT)
 
 show(main.part)
 # %%
