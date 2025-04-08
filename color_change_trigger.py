@@ -94,6 +94,12 @@ with BuildPart(Plane.XZ) as main:
             Rectangle(width=pocket_width2, height=pocket_height2)
     loft([bottom_pocket1.sketch.face(), bottom_pocket2.sketch.face()], mode=Mode.SUBTRACT)
 
+    with BuildSketch(Plane.XY.offset(h1)) as top_profile:
+        with BuildLine() as bl:
+            Polyline([(0,24),(0,30),(-3,30),(-w,12+6),(-w,12),(6-w,12),(0,24)])
+        make_face()
+    extrude(top_profile.sketch, amount=8)
+
 show(main.part)
 # %%
 export_step(main.part, "color_change_trigger.step")
