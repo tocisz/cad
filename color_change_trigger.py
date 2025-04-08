@@ -22,6 +22,21 @@ with BuildSketch() as from_side:
     Polygon((0,0),(0,h2),(w1,h1),(w,h1),(w,0), align=(Align.MAX, Align.MIN))
 show(from_side.sketch)
 # %%
+h0 = 1.5*MM
+h3 = 7*MM
+h4 = 8*MM
+h5 = 10*MM
+with BuildSketch() as from_side2:
+    with BuildLine() as from_side2_outline:
+        l1 = Line((-w,0),(-w,h4))
+        l2 = PolarLine(start=l1@1, angle=60, length=(h5-h4)*2/math.sqrt(3))
+        l3 = Line((0,0),(0,h0))
+        l4 = PolarLine(start=l3@1, angle=120, length=(h3-h0)*2/math.sqrt(3))
+    make_hull()
+
+show(from_side2.sketch)
+
+# %%
 h0 = 1.6*MM
 cutout_h = 12*MM
 slot1_l = 9*MM
@@ -104,6 +119,9 @@ with BuildPart(Plane.XZ) as main:
             Line(boxmax, boxmax-Vector(4,0))
         make_hull()
     extrude(top_profile.sketch, amount=8)
+
+    add(from_side2.sketch)
+    extrude(amount=-l, mode=Mode.INTERSECT)
 
 show(main.part)
 # %%
