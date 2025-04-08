@@ -22,7 +22,7 @@ with BuildSketch() as from_side:
     Polygon((0,0),(0,h2),(w1,h1),(w,h1),(w,0), align=(Align.MAX, Align.MIN))
 show(from_side.sketch)
 # %%
-h0 = 1.5*MM
+h0 = 1.6*MM
 h3 = 7*MM
 h4 = 8*MM
 h5 = 10*MM
