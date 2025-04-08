@@ -32,7 +32,9 @@ with BuildSketch() as from_side2:
         l2 = PolarLine(start=l1@1, angle=60, length=(h5-h4)*2/math.sqrt(3))
         l3 = Line((0,0),(0,h0))
         l4 = PolarLine(start=l3@1, angle=120, length=(h3-h0)*2/math.sqrt(3))
-    make_hull()
+        Line(l1 @ 0, l3 @ 0)
+        TangentArc(l4 @ 1, l2 @ 1, tangent=Vector(-1,0))
+    make_face()
 
 show(from_side2.sketch)
 
@@ -101,15 +103,9 @@ with BuildPart(Plane.XZ) as main:
             Circle(radius=drill2_d2/2)
     extrude(amount=h2, mode=Mode.SUBTRACT)
 
-    with BuildSketch() as bottom_pocket1:
-        with Locations(pocket_loc):
-            Rectangle(width=pocket_width1, height=pocket_height1, align=(Align.MAX, Align.MIN))
-    with BuildSketch(Plane.XY.offset(pocket_depth)) as bottom_pocket2:
-        with Locations(bottom_pocket1.face().center()):
-            Rectangle(width=pocket_width2, height=pocket_height2)
-    loft([bottom_pocket1.sketch.face(), bottom_pocket2.sketch.face()], mode=Mode.SUBTRACT)
-
     with BuildSketch(Plane.XY.offset(h1)) as top_profile:
+        # with Locations(Vector(0, 12)):
+        #     Polygon((0,24),(0,30),(-3,30),(-w,12+6),(-w,12),(6-w,12),(0,24), align=(Align.MAX, Align.MIN))
         with BuildLine() as bl:
             boxmin = Vector(-w,12)
             boxmax = Vector(0,30)
@@ -118,10 +114,20 @@ with BuildPart(Plane.XZ) as main:
             Line(boxmax, boxmax-Vector(0,6))
             Line(boxmax, boxmax-Vector(4,0))
         make_hull()
-    extrude(top_profile.sketch, amount=8)
+    extrude(amount=8)
 
     add(from_side2.sketch)
     extrude(amount=-l, mode=Mode.INTERSECT)
+
+    # loft leaves in the context?
+    with BuildSketch() as bottom_pocket1:
+        with Locations(pocket_loc):
+            Rectangle(width=pocket_width1, height=pocket_height1, align=(Align.MAX, Align.MIN))
+    with BuildSketch(Plane.XY.offset(pocket_depth)) as bottom_pocket2:
+        with Locations(bottom_pocket1.face().center()):
+            Rectangle(width=pocket_width2, height=pocket_height2)
+    loft([bottom_pocket1.sketch.face(), bottom_pocket2.sketch.face()], mode=Mode.SUBTRACT)
+
 
 show(main.part)
 # %%
