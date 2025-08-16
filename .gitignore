@@ -1,6 +1,8 @@
 __pycache__
 .python-version
+.venv
 *.step
+!WeMos_D1_Mini_ESP8266_v8.step
 *.stl
 *.3mf
 *.svg
