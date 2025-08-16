@@ -3,3 +3,5 @@ __pycache__
 *.step
 *.stl
 *.3mf
+*.svg
+*.brep

@@ -1,8 +1,8 @@
 # %%
-from build123d import *
+from build123d import BuildSketch, BuildPart, Compound, Mode, add, scale, offset, extrude, export_step, export_brep, export_stl, ExportSVG, import_svg, MM
 from ocp_vscode import show
 # %%
-monotile_svg = import_svg("monotile-1.000-1.000-0.000.svg")
+monotile_svg = import_svg("monotile-1.000-1.000-0.000.svg")  # noqa: F405
 svg_height = monotile_svg.face().bounding_box().size.Y
 # %%
 monotile_height = 169*MM
@@ -26,8 +26,17 @@ with BuildSketch() as outside:
     add(plus_blade)
     offset(amount=rim)
     add(plus_blade, mode=Mode.SUBTRACT)
+
+with BuildSketch() as technical:
+    add(monotile.face())
+    add(inside.face(), mode=Mode.SUBTRACT)
+
+exporter = ExportSVG()
+exporter.add_layer("Monotile")
+exporter.add_shape(technical.sketch, layer="Monotile")
+exporter.write("technical.svg")
     
-show(inside.sketch, outside.sketch)
+show(technical.sketch)
 # %%
 exporter = ExportSVG()
 exporter.add_layer("Inside")
