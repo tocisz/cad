@@ -34,18 +34,54 @@ d1_switch.color = (0.8, 0.2, 0.2)
 d1_switch_bbox = d1_switch.bounding_box()
 d1_switch_size = d1_switch_bbox.size
 
+#%%
+import copy
 d1_switch_offset = d1_switch_bbox.center() - d1_bbox.center()
 
 d1_full = Compound(children=[d1_main, d1_usb, d1_switch], label="d1_full")
 
-show(d1_full)
+d1_pcb_measured_thinkness = 1.4
+hat_thickness = 2.0
+hat_distance_from_d1 = 10.5 + d1_pcb_measured_thinkness
+
+screw_pos_back = 4.5
+screw_pos_side = 10
+
+with BuildPart() as hat_board:
+    with BuildSketch(Plane.XY.offset(hat_distance_from_d1)):
+        Rectangle(d1_bbox.size.X, d1_bbox.size.Y)
+    extrude(amount=hat_thickness)
+
+    hat_bbox = hat_board.part.bounding_box()
+    screw1 = Vector(hat_bbox.max.X - screw_pos_side, hat_bbox.max.Y - screw_pos_back, hat_bbox.max.Z)
+    screw2 = screw1 + Vector(-3.5, 0, 0)
+    RigidJoint(label="screw1", joint_location=Location(screw1))
+    RigidJoint(label="screw2", joint_location=Location(screw2))
+hat_board.part.label = "OpenTherm Hat Board"
+hat_board.part.color = (0.8, 0.6, 0.6)
+
+with BuildPart() as test:
+    with BuildSketch(Plane.XY):
+        Circle(1)
+    extrude(amount=8)
+    RigidJoint(label="test_joint")
+
+test1 = copy.copy(test.part)
+hat_board.part.joints["screw1"].connect_to(test1.joints["test_joint"])
+
+test2 = copy.copy(test.part)
+hat_board.part.joints["screw2"].connect_to(test2.joints["test_joint"])
+
+hat = Compound(children=[hat_board.part, test1, test2], label="OpenTherm Hat")
+
+show(d1_full, hat)
 
 #%%
 bbox = d1_full.bounding_box()
 
-clearance = 0.8
+clearance = 0.4
 wall_thickness = 1.2
-extra_height = 10  # mm above board
+extra_height = 5  # mm above board
 bottom_space = 3  # mm below usb
 
 # Outer box
@@ -79,6 +115,7 @@ with BuildPart() as housing:
     top_face = housing.faces().sort_by(Axis.Z)[-1]
     bottom_face = housing.faces().sort_by(Axis.Z)[0]
     back_face = housing.faces().sort_by(Axis.Y)[-1]
+    right_face = housing.faces().sort_by(Axis.X)[-1]
 
     # Hollow it out with open top
     offset(amount=-wall_thickness, openings=[top_face])
@@ -89,17 +126,31 @@ with BuildPart() as housing:
             Rectangle(fin_width, fin_length, align=(Align.CENTER, Align.MIN))
     extrude(amount=fin_height, mode=Mode.ADD)
 
-    back_face_height = back_face.bounding_box().size.Z/2
+    # Fillet vertical edges
+    fillet(housing.edges().filter_by(Axis.Z), 0.4)
+
+    back_face_z_shift = back_face.bounding_box().size.Z/2
 
     # Add cutout for USB
-    with BuildSketch(Plane(back_face).reverse().move(Location((0,0,wall_thickness-back_face_height)))) as usb_sketch:
-        Rectangle(usb_cutout_width, usb_cutout_height, align=(Align.CENTER, Align.MIN))
+    with BuildSketch(Plane(back_face).reverse().move(Location((0,0,wall_thickness-back_face_z_shift)))):
+        r = Rectangle(usb_cutout_width, usb_cutout_height, align=(Align.CENTER, Align.MIN))
+        fillet(r.vertices(), 1)
+    extrude(amount=wall_thickness, mode=Mode.SUBTRACT)
+
+    # Add cutout for switch
+    switch_cutout_width = d1_switch_size.Y
+    switch_cutout_height = d1_switch_size.Z
+    with BuildSketch(Plane(right_face).reverse().move(Location((0, d1_switch_bbox.center().Y, d1_switch_bbox.center().Z)))):
+        r = Rectangle(switch_cutout_width, switch_cutout_height)
+        fillet(r.vertices(), 1)
     extrude(amount=wall_thickness, mode=Mode.SUBTRACT)
 
 housing.part.label = "Housing"
 housing.part.color = (0.6, 0.6, 1)
 
-all = Compound(children=[d1_full, housing.part], label="All Components")
+all = Compound(children=[
+        d1_full, hat, housing.part
+    ], label="All")
 
 show(all,
     clip_normal_1=(0, -1, 0), clip_slider_1=14.1,
