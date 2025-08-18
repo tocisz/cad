@@ -62,19 +62,17 @@ with BuildPart() as hat_board:
 hat_board.part.label = "OpenTherm Hat Board"
 hat_board.part.color = (0.8, 0.6, 0.6)
 
-with BuildPart() as test:
+with BuildPart() as screw_mock:
     with BuildSketch(Plane.XY):
         Circle(1.25)
     extrude(amount=8)
-    RigidJoint(label="test_joint")
+    RigidJoint(label="joint")
 
-test1 = copy.copy(test.part)
-hat_board.part.joints["screw1"].connect_to(test1.joints["test_joint"])
+screw_mocks = {i: copy.copy(screw_mock.part) for i in range(1,3)}
+for i, screw_mock in screw_mocks.items():
+    hat_board.part.joints[f"screw{i}"].connect_to(screw_mock.joints["joint"])
 
-test2 = copy.copy(test.part)
-hat_board.part.joints["screw2"].connect_to(test2.joints["test_joint"])
-
-hat = Compound(children=[hat_board.part, test1, test2], label="OpenTherm Hat")
+hat = Compound(children=[hat_board.part] + list(screw_mocks.values()), label="OpenTherm Hat")
 
 show(d1_full, hat)
 
