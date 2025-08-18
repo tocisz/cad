@@ -64,7 +64,7 @@ hat_board.part.color = (0.8, 0.6, 0.6)
 
 with BuildPart() as test:
     with BuildSketch(Plane.XY):
-        Circle(1)
+        Circle(1.25)
     extrude(amount=8)
     RigidJoint(label="test_joint")
 
@@ -79,11 +79,38 @@ hat = Compound(children=[hat_board.part, test1, test2], label="OpenTherm Hat")
 show(d1_full, hat)
 
 #%%
+latch_angle = 30
+latch_angle2 = 90-latch_angle
+latch_thickness = 0.8
+latch_length = 8
+latch_depth = 0.8
+latch_width = 5
+
+with BuildPart() as latch:
+
+    with BuildSketch() as latch_sketch:
+        r = Rectangle(latch_length, latch_thickness, align=(Align.MIN, Align.MAX))
+        Triangle(a=latch_depth*2/tan(radians(latch_angle)), B=latch_angle, C=latch_angle, align=(Align.MIN, Align.MIN))
+
+        chamfer(r.vertices().group_by(Axis.X)[-1].sort_by(Axis.Y)[0], length=latch_thickness/tan(radians(latch_angle)), angle=latch_angle)
+        chamfer(r.vertices().group_by(Axis.X)[0].sort_by(Axis.Y)[0], length=latch_thickness, angle=latch_angle2)
+
+    extrude(amount=latch_width)
+
+    # Joint should be placed inside the box on it's rim
+    sel = latch.part.edges().filter_by(Axis.Z).sort_by(Axis.X)[-2]
+    middle = np.array(sel.location_at(0.5).position.to_tuple())
+    middle[1] = 0 # reset Y to 0
+    joint = Location(middle, Axis.Y.direction, -90)
+    RigidJoint(label="latch_joint", joint_location=joint)
+
+show(latch.part)
+#%% 
 bbox = d1_full.bounding_box()
 
 clearance = 0.4
 wall_thickness = 1.2
-extra_height = 5  # mm above board
+extra_height = 2.5  # mm above board
 bottom_space = 3  # mm below usb
 
 # Outer box
@@ -147,41 +174,32 @@ with BuildPart() as housing:
         fillet(r.vertices(), 1)
     extrude(amount=wall_thickness, mode=Mode.SUBTRACT)
 
+    sel = housing.part.faces().sort_by(Axis.Z)[-1]
+    sel = sel.edges().filter_by(Axis.X).sort_by(Axis.Y)
+    loc1 = Location(sel[1].location_at(0.5).position, Axis.Z.direction, 180)
+    RigidJoint(label="housing_joint_1", joint_location=loc1)
+    loc2 = Location(sel[-2].location_at(0.5).position)
+    RigidJoint(label="housing_joint_2", joint_location=loc2)
+
 housing.part.label = "Housing"
 housing.part.color = (0.6, 0.6, 1)
 
+latch1 = copy.copy(latch.part)
+latch1.label = "Latch 1"
+latch1.color = housing.part.color
+latch2 = copy.copy(latch.part)
+latch2.label = "Latch 2"
+latch2.color = housing.part.color
+# Connect latch to housing
+housing.part.joints["housing_joint_1"].connect_to(latch1.joints["latch_joint"])
+housing.part.joints["housing_joint_2"].connect_to(latch2.joints["latch_joint"])
+
+housing_assembly = Compound(children=[housing.part, latch1, latch2], label="Housing Assembly")
+
 all = Compound(children=[
-        d1_full, hat, housing.part
+        d1_full, hat, housing_assembly
     ], label="All")
 
 show(all,
     clip_normal_1=(0, -1, 0), clip_slider_1=14.1,
     clip_normal_2=(0, 0, 1), clip_slider_2=6.99)
-#%%
-latch_angle = 30
-latch_angle2 = 90-latch_angle
-latch_thickness = 1.2
-latch_length = 15
-latch_depth = 0.8
-latch_width = 5
-
-with BuildPart() as latch:
-
-    with BuildSketch() as latch_sketch:
-        r = Rectangle(latch_length, latch_thickness, align=(Align.MIN, Align.MAX))
-        Triangle(a=latch_depth*2/tan(radians(latch_angle)), B=latch_angle, C=latch_angle, align=(Align.MIN, Align.MIN))
-
-        chamfer(r.vertices().group_by(Axis.X)[-1].sort_by(Axis.Y)[0], length=latch_thickness/tan(radians(latch_angle)), angle=latch_angle)
-        chamfer(r.vertices().group_by(Axis.X)[0].sort_by(Axis.Y)[0], length=latch_thickness, angle=latch_angle2)
-
-    extrude(amount=latch_width)
-
-    # Joint should be placed inside the box on it's rim
-    sel = latch.part.edges().filter_by(Axis.Z).sort_by(Axis.X)[-2].vertices()
-    middle = np.array(tuple(sel[0]+sel[1]))/2
-    middle[1] = 0 # reset Y to 0
-    # TODO how to set rotation of the joint? I guess (0, -1, 0) is the right direction
-    RigidJoint(label="latch_joint", joint_location=Location(middle))
-
-show(latch.part, Vertex(middle))
-# %%
