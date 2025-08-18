@@ -1,5 +1,8 @@
 #%%
+import copy
+import numpy as np
 from build123d import *
+from math import radians, tan
 from ocp_vscode import show
 #%%
 d1_step = import_step("WeMos_D1_Mini_ESP8266_v8.step")
@@ -35,7 +38,6 @@ d1_switch_bbox = d1_switch.bounding_box()
 d1_switch_size = d1_switch_bbox.size
 
 #%%
-import copy
 d1_switch_offset = d1_switch_bbox.center() - d1_bbox.center()
 
 d1_full = Compound(children=[d1_main, d1_usb, d1_switch], label="d1_full")
@@ -155,3 +157,31 @@ all = Compound(children=[
 show(all,
     clip_normal_1=(0, -1, 0), clip_slider_1=14.1,
     clip_normal_2=(0, 0, 1), clip_slider_2=6.99)
+#%%
+latch_angle = 30
+latch_angle2 = 90-latch_angle
+latch_thickness = 1.2
+latch_length = 15
+latch_depth = 0.8
+latch_width = 5
+
+with BuildPart() as latch:
+
+    with BuildSketch() as latch_sketch:
+        r = Rectangle(latch_length, latch_thickness, align=(Align.MIN, Align.MAX))
+        Triangle(a=latch_depth*2/tan(radians(latch_angle)), B=latch_angle, C=latch_angle, align=(Align.MIN, Align.MIN))
+
+        chamfer(r.vertices().group_by(Axis.X)[-1].sort_by(Axis.Y)[0], length=latch_thickness/tan(radians(latch_angle)), angle=latch_angle)
+        chamfer(r.vertices().group_by(Axis.X)[0].sort_by(Axis.Y)[0], length=latch_thickness, angle=latch_angle2)
+
+    extrude(amount=latch_width)
+
+    # Joint should be placed inside the box on it's rim
+    sel = latch.part.edges().filter_by(Axis.Z).sort_by(Axis.X)[-2].vertices()
+    middle = np.array(tuple(sel[0]+sel[1]))/2
+    middle[1] = 0 # reset Y to 0
+    # TODO how to set rotation of the joint? I guess (0, -1, 0) is the right direction
+    RigidJoint(label="latch_joint", joint_location=Location(middle))
+
+show(latch.part, Vertex(middle))
+# %%
