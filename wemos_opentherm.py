@@ -88,9 +88,13 @@ hat_board.part.color = (0.8, 0.6, 0.6)
 
 screw_mocks = {i: copy.copy(screw_mock.part) for i in range(1,3)}
 for i, mock in screw_mocks.items():
+    mock.label = f"screw{i}"
+    mock.color = hat_board.part.color
     hat_board.part.joints[f"screw{i}"].connect_to(mock.joints["joint"])
 
 bs18b20 = copy.copy(to92_mock.part)
+bs18b20.label = "bs18b20"
+bs18b20.color = hat_board.part.color
 hat_board.part.joints["bs18b20"].connect_to(bs18b20.joints["joint"])
 
 hat = Compound(children=[hat_board.part, bs18b20] + list(screw_mocks.values()), label="OpenTherm Hat")
