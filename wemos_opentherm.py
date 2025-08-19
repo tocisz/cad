@@ -1,10 +1,10 @@
-#%%
+#%% Imports
 import copy
 import numpy as np
 from build123d import *
 from math import radians, tan
 from ocp_vscode import show
-#%%
+#%% Load WeMos D1 Mini STEP file
 d1_step = import_step("WeMos_D1_Mini_ESP8266_v8.step")
 
 def find_by_label(shape: Compound, target: str):
@@ -37,7 +37,29 @@ d1_switch.color = (0.8, 0.2, 0.2)
 d1_switch_bbox = d1_switch.bounding_box()
 d1_switch_size = d1_switch_bbox.size
 
-#%%
+#%% Screw mock
+with BuildPart() as screw_mock:
+    with BuildSketch(Plane.XY):
+        Circle(1.25)
+    extrude(amount=8)
+    RigidJoint(label="joint")
+
+show(screw_mock.part)
+
+#%% to92 mock
+with BuildPart() as to92_mock:
+    width = 3.3
+    length = 4.4
+    height = 4.3
+    with BuildSketch(Plane.XY) as sk:
+        r = Rectangle(width, height)
+        fillet(r.vertices().group_by(Axis.X)[-1], height/2-0.001)
+    extrude(amount=height)
+    RigidJoint(label="joint")
+
+show(to92_mock.part, sk.sketch_local)
+
+#%% Upper hat board mock
 d1_switch_offset = d1_switch_bbox.center() - d1_bbox.center()
 
 d1_full = Compound(children=[d1_main, d1_usb, d1_switch], label="d1_full")
@@ -59,24 +81,23 @@ with BuildPart() as hat_board:
     screw2 = screw1 + Vector(-3.5, 0, 0)
     RigidJoint(label="screw1", joint_location=Location(screw1))
     RigidJoint(label="screw2", joint_location=Location(screw2))
+    bs18b20_location = Location((hat_bbox.max.X-4, hat_bbox.max.Y-3, hat_bbox.max.Z), Axis.Z.direction, 90)
+    RigidJoint(label="bs18b20", joint_location=bs18b20_location)
 hat_board.part.label = "OpenTherm Hat Board"
 hat_board.part.color = (0.8, 0.6, 0.6)
 
-with BuildPart() as screw_mock:
-    with BuildSketch(Plane.XY):
-        Circle(1.25)
-    extrude(amount=8)
-    RigidJoint(label="joint")
-
 screw_mocks = {i: copy.copy(screw_mock.part) for i in range(1,3)}
-for i, screw_mock in screw_mocks.items():
-    hat_board.part.joints[f"screw{i}"].connect_to(screw_mock.joints["joint"])
+for i, mock in screw_mocks.items():
+    hat_board.part.joints[f"screw{i}"].connect_to(mock.joints["joint"])
 
-hat = Compound(children=[hat_board.part] + list(screw_mocks.values()), label="OpenTherm Hat")
+bs18b20 = copy.copy(to92_mock.part)
+hat_board.part.joints["bs18b20"].connect_to(bs18b20.joints["joint"])
+
+hat = Compound(children=[hat_board.part, bs18b20] + list(screw_mocks.values()), label="OpenTherm Hat")
 
 show(d1_full, hat)
 
-#%%
+#%% Latch part
 latch_angle = 30
 latch_angle2 = 90-latch_angle
 latch_thickness = 0.8
@@ -103,7 +124,7 @@ with BuildPart() as latch:
     RigidJoint(label="latch_joint", joint_location=joint)
 
 show(latch.part)
-#%% 
+#%% Lower part of the housing
 bbox = d1_full.bounding_box()
 
 clearance = 0.4
@@ -167,7 +188,8 @@ with BuildPart() as housing:
     # Add cutout for switch
     switch_cutout_width = d1_switch_size.Y
     switch_cutout_height = d1_switch_size.Z
-    with BuildSketch(Plane(right_face).reverse().move(Location((0, d1_switch_bbox.center().Y, d1_switch_bbox.center().Z)))):
+    switch_cutout_z_shift = 0.95 # why it's needed?
+    with BuildSketch(Plane(right_face).reverse().move(Location((0, d1_switch_bbox.center().Y, d1_switch_bbox.center().Z+switch_cutout_z_shift)))):
         r = Rectangle(switch_cutout_width, switch_cutout_height)
         fillet(r.vertices(), 1)
     extrude(amount=wall_thickness, mode=Mode.SUBTRACT)
