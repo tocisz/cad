@@ -4,6 +4,7 @@ import numpy as np
 from build123d import *
 from math import radians, tan
 from ocp_vscode import show
+
 #%% Load WeMos D1 Mini STEP file
 d1_step = import_step("WeMos_D1_Mini_ESP8266_v8.step")
 
@@ -38,10 +39,12 @@ d1_switch_bbox = d1_switch.bounding_box()
 d1_switch_size = d1_switch_bbox.size
 
 #%% Screw mock
+screw_diameter = 2.5
+screw_length = 8
 with BuildPart() as screw_mock:
     with BuildSketch(Plane.XY):
-        Circle(1.25)
-    extrude(amount=8)
+        Circle(screw_diameter/2)
+    extrude(amount=screw_length)
     RigidJoint(label="joint")
 
 show(screw_mock.part)
@@ -227,6 +230,48 @@ all = Compound(children=[
 show(all,
     clip_normal_1=(0, -1, 0), clip_slider_1=14.1,
     clip_normal_2=(0, 0, 1), clip_slider_2=6.99)
+
+#%% Upper part of the housing
+sketch_plane = Plane.XY.offset(hat.bounding_box().max.Z+clearance)
+with BuildSketch(sketch_plane) as cutouts:
+    with Locations(hat_board.part.joints["screw1"].location,
+                hat_board.part.joints["screw2"].location):
+        Circle(screw_diameter/2+clearance)
+
+with BuildSketch(sketch_plane) as upper_housing_outline:
+    r1 = Rectangle(d1_bbox.size.X + 2*(clearance + wall_thickness),
+              d1_bbox.size.Y + 2*(clearance + wall_thickness))
+    r1_corner = r1.vertices().group_by(Axis.X)[-1].sort_by(Axis.Y)[-1]
+    corner_cut_x = r1_corner.X - bs18b20.bounding_box().min.X + clearance
+    corner_cut_y = r1_corner.Y - bs18b20.bounding_box().min.Y + clearance
+    
+    with Locations(r1_corner):
+        Rectangle(corner_cut_x, corner_cut_y, mode=Mode.SUBTRACT,
+                  align=(Align.MAX, Align.MAX))
+    fillet(upper_housing_outline.vertices(), 0.4)
+
+with BuildPart() as upper_housing:
+    with BuildSketch(sketch_plane) as sketch1:
+        add(upper_housing_outline.sketch)
+        make_hull(cutouts.sketch.edges(), mode=Mode.SUBTRACT)
+    extrude(sketch1.sketch, amount=wall_thickness)
+
+    with BuildSketch(sketch_plane) as sketch2_inner:
+        add(upper_housing_outline.sketch)
+        offset(amount=-wall_thickness)
+
+    with BuildSketch(sketch_plane) as sketch2:
+        add(upper_housing_outline.sketch)
+        add(sketch2_inner.sketch, mode=Mode.SUBTRACT)
+    extrude1_distance = sketch_plane.location.position.Z - hat_board.part.bounding_box().max.Z - clearance
+    extrude(sketch2.sketch, amount=-extrude1_distance)
+upper_housing.part.label = "Upper Housing"
+upper_housing.part.color = Color(0.6, 0.9, 1)
+
+show(all,
+     upper_housing.part
+)
+
 #%%
 export_step(all, "wemos_opentherm_assembly.step")
 # %%
