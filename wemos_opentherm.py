@@ -19,13 +19,13 @@ def find_by_label(shape: Compound, target: str):
 
 d1_main = find_by_label(d1_step, "COMPOUND")[0]
 d1_main.label = "D1 Main"
-d1_main.color = (0.8, 0.8, 0.8)
+d1_main.color = Color(0.8, 0.8, 0.8)
 d1_bbox = d1_main.bounding_box()
 d1_size = d1_bbox.size
 
 d1_usb = find_by_label(d1_step, "USB")[0]
 d1_usb.label = "USB Port"
-d1_usb.color = (0.8, 0.8, 0.2)
+d1_usb.color = Color(0.8, 0.8, 0.2)
 d1_usb_bbox = d1_usb.bounding_box()
 d1_usb_size = d1_usb_bbox.size
 
@@ -33,7 +33,7 @@ d1_usb_offset = d1_usb_bbox.center() - d1_bbox.center()
 
 d1_switch = find_by_label(d1_step, "Switch")[0]
 d1_switch.label = "Switch"
-d1_switch.color = (0.8, 0.2, 0.2)
+d1_switch.color = Color(0.8, 0.2, 0.2)
 d1_switch_bbox = d1_switch.bounding_box()
 d1_switch_size = d1_switch_bbox.size
 
@@ -84,7 +84,7 @@ with BuildPart() as hat_board:
     bs18b20_location = Location((hat_bbox.max.X-4, hat_bbox.max.Y-3, hat_bbox.max.Z), Axis.Z.direction, 90)
     RigidJoint(label="bs18b20", joint_location=bs18b20_location)
 hat_board.part.label = "OpenTherm Hat Board"
-hat_board.part.color = (0.8, 0.6, 0.6)
+hat_board.part.color = Color(0.8, 0.6, 0.6)
 
 screw_mocks = {i: copy.copy(screw_mock.part) for i in range(1,3)}
 for i, mock in screw_mocks.items():
@@ -206,7 +206,7 @@ with BuildPart() as housing:
     RigidJoint(label="housing_joint_2", joint_location=loc2)
 
 housing.part.label = "Housing"
-housing.part.color = (0.6, 0.6, 1)
+housing.part.color = Color(0.6, 0.6, 1)
 
 latch1 = copy.copy(latch.part)
 latch1.label = "Latch 1"
@@ -227,3 +227,6 @@ all = Compound(children=[
 show(all,
     clip_normal_1=(0, -1, 0), clip_slider_1=14.1,
     clip_normal_2=(0, 0, 1), clip_slider_2=6.99)
+#%%
+export_step(all, "wemos_opentherm_assembly.step")
+# %%
