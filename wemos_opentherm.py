@@ -1,5 +1,7 @@
 #%% Imports
 import copy
+from curses.textpad import rectangle
+from dis import Positions
 from matplotlib.transforms import offset_copy
 import numpy as np
 from build123d import *
@@ -252,6 +254,20 @@ with BuildPart() as upper_housing:
     extrude(upper_housing_middle.sketch, amount=-extrude_distance2)
     for lt in latches.values():
         offset(lt, amount=0.2, mode=Mode.SUBTRACT)
+
+    back_face = upper_housing.faces().sort_by(Axis.Y)[-1]
+    back_plane = Plane(back_face)
+    with BuildSketch(back_plane) as cutout_for_wires:
+        # origin set to upper right corner
+        s1bbMin = back_plane.to_local_coords(screw_mocks[2].bounding_box().min)
+        s1bbMax = back_plane.to_local_coords(screw_mocks[1].bounding_box().max)
+        cut_height = 4.5
+        with Locations(s1bbMin):
+            rect_size = s1bbMax - s1bbMin
+            rect = Rectangle(rect_size.X, cut_height, align=(Align.MIN, Align.MAX))
+        fillet(cutout_for_wires.vertices(), 1)
+    extrude(cutout_for_wires.sketch, amount=-wall_thickness, mode=Mode.SUBTRACT)
+
 upper_housing.part.label = "Upper Housing"
 upper_housing.part.color = Color(0.6, 0.9, 1)
 
