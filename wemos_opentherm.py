@@ -253,6 +253,8 @@ with BuildPart() as upper_housing:
     extrude(sketch1.sketch, amount=wall_thickness)
     extrude(upper_housing_wall.sketch, amount=-extrude_distance)
     extrude(upper_housing_middle.sketch, amount=-extrude_distance2)
+    offset(latch1, amount=0.2, mode=Mode.SUBTRACT)
+    offset(latch2, amount=0.2, mode=Mode.SUBTRACT)
 upper_housing.part.label = "Upper Housing"
 upper_housing.part.color = Color(0.6, 0.9, 1)
 
