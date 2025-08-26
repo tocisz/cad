@@ -1,8 +1,5 @@
 #%% Imports
 import copy
-from curses.textpad import rectangle
-from dis import Positions
-from matplotlib.transforms import offset_copy
 import numpy as np
 from build123d import *
 from math import radians, tan
@@ -206,6 +203,15 @@ housing_assembly = Compound(children=[housing.part] + list(latches.values()), la
 
 show(d1_full, hat, housing_assembly)
 
+#%% Peg for stabilizing connection
+with BuildPart() as peg:
+    Cylinder(clearance, clearance*3)
+    with BuildSketch(Plane.XY.offset(-clearance/2).rotated((45,0,0))) as limit:
+        Rectangle(10,10)
+    extrude(limit.sketch, amount=-10, mode=Mode.SUBTRACT)
+    RigidJoint("joint", joint_location=Location((0,0,clearance/2), Axis.X.direction, 180))
+show(peg.part)
+
 #%% Sketches for upper part of the housing
 sketch_plane = Plane.XY.offset(hat.bounding_box().max.Z+clearance)
 with BuildSketch(sketch_plane) as cutouts:
@@ -268,11 +274,29 @@ with BuildPart() as upper_housing:
         fillet(cutout_for_wires.vertices(), 1)
     extrude(cutout_for_wires.sketch, amount=-wall_thickness, mode=Mode.SUBTRACT)
 
+    pegs_plane = sketch_plane_middle.offset(-extrude_distance2)
+    with BuildSketch(pegs_plane) as tmp:
+        Rectangle(bbox.size.X, bbox.size.Y)
+    peg1 = tmp.sketch.vertices().group_by(Axis.X)[0].sort_by(Axis.Y)[0]
+    peg2 = tmp.sketch.vertices().group_by(Axis.X)[0].sort_by(Axis.Y)[-1]
+    peg3 = tmp.sketch.vertices().group_by(Axis.X)[-1].sort_by(Axis.Y)[0]
+    RigidJoint("peg1", joint_location=Location(peg1, Axis.Z.direction, 270-135))
+    RigidJoint("peg2", joint_location=Location(peg2, Axis.Z.direction, 180-135))
+    RigidJoint("peg3", joint_location=Location(peg3, Axis.Z.direction, -135))
 upper_housing.part.label = "Upper Housing"
 upper_housing.part.color = Color(0.6, 0.9, 1)
 
+pegs = {i: copy.copy(peg.part) for i in range(1,4)}
+for i, pg in pegs.items():
+    pg.label = f"Peg {i}"
+    pg.color = upper_housing.part.color
+    upper_housing.part.joints[f"peg{i}"].connect_to(pg.joints["joint"])
+
+upper_housing_assembly = Compound(label="Upper Housing Assembly",
+    children=[upper_housing.part] + list(pegs.values()))
+
 all = Compound(children=[
-        d1_full, hat, housing_assembly, upper_housing.part
+        d1_full, hat, housing_assembly, upper_housing_assembly
     ], label="All")
 
 show(all)
@@ -294,10 +318,11 @@ housing_assembly = Compound(children=[housing.part, housing_corner.part] + list(
                             label="Housing Assembly")
 
 all = Compound(children=[
-        d1_full, hat, housing_assembly, upper_housing.part
+        d1_full, hat, housing_assembly, upper_housing_assembly
     ], label="All")
 
 show(all)
-#%%
+#%% Export
 export_step(all, "wemos_opentherm_assembly.step")
-# %%
+export_step(Compound(housing_assembly), "wemos_opentherm_lower_part.step")
+export_step(Compound(upper_housing_assembly), "wemos_opentherm_upper_part.step")
