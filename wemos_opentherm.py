@@ -160,10 +160,11 @@ with BuildSketch(middle_plane) as hat_middle:
 show(d1_full, hat_bottom.sketch, hat_middle.sketch)
 
 #%% Lower part of the housing
+middle_extrude_height = d1_main.bounding_box().max.Z-middle_plane.location.position.Z+extra_height
 with BuildPart() as housing:
     extrude(hat_bottom_outer.sketch, amount=-wall_thickness)
     extrude(hat_bottom.sketch, amount=fin_height)
-    extrude(hat_middle.sketch, amount=d1_main.bounding_box().max.Z-middle_plane.location.position.Z+extra_height)
+    extrude(hat_middle.sketch, amount=middle_extrude_height)
 
     # Add cutout for USB
     back_face = housing.faces().sort_by(Axis.Y)[-1]
@@ -259,7 +260,28 @@ all = Compound(children=[
     ], label="All")
 
 show(all)
+#%% Housing corner
+upper_plane = middle_plane.offset(middle_extrude_height)
+with BuildSketch(upper_plane) as upper_sketch:
+    add(hat_middle.sketch)
+    with Locations(r1_corner):
+        corner_cut_x1 = r1_corner.X - bs18b20.bounding_box().min.X + wall_thickness + clearance
+        corner_cut_y1 = r1_corner.Y - bs18b20.bounding_box().min.Y + wall_thickness + clearance
+        Rectangle(corner_cut_x1, corner_cut_y1, mode=Mode.INTERSECT,
+                    align=(Align.MAX, Align.MAX))
+with BuildPart() as housing_corner:
+    extrude(upper_sketch.sketch, amount=extrude_distance2-2*clearance)
+housing_corner.part.label = "Housing corner"
+housing_corner.part.color = housing.part.color
 
+housing_assembly = Compound(children=[housing.part, housing_corner.part] + list(latches.values()),
+                            label="Housing Assembly")
+
+all = Compound(children=[
+        d1_full, hat, housing_assembly, upper_housing.part
+    ], label="All")
+
+show(all)
 #%%
 export_step(all, "wemos_opentherm_assembly.step")
 # %%
