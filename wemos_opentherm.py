@@ -205,13 +205,7 @@ housing.part.joints["housing_joint_2"].connect_to(latch2.joints["latch_joint"])
 
 housing_assembly = Compound(children=[housing.part, latch1, latch2], label="Housing Assembly")
 
-all = Compound(children=[
-        d1_full, hat, housing_assembly
-    ], label="All")
-
-show(all,
-    clip_normal_1=(0, -1, 0), clip_slider_1=14.1,
-    clip_normal_2=(0, 0, 1), clip_slider_2=6.99)
+show(d1_full, hat, housing_assembly)
 
 #%% Sketches for upper part of the housing
 sketch_plane = Plane.XY.offset(hat.bounding_box().max.Z+clearance)
@@ -247,7 +241,9 @@ with BuildSketch(sketch_plane_middle) as upper_housing_middle:
                   corner_cut_y+wall_thickness+clearance,
                   mode=Mode.SUBTRACT, align=(Align.MAX, Align.MAX))
 
-show(all, upper_housing_outline.sketch, cutouts.sketch, upper_housing_wall.sketch, upper_housing_middle.sketch)
+show(d1_full, hat, housing_assembly,
+     upper_housing_outline.sketch, cutouts.sketch,
+     upper_housing_wall.sketch, upper_housing_middle.sketch)
 #%% Upper part of the housing
 extrude_distance2 = sketch_plane_middle.location.position.Z - housing.part.bounding_box().max.Z
 with BuildPart() as upper_housing:
@@ -260,9 +256,11 @@ with BuildPart() as upper_housing:
 upper_housing.part.label = "Upper Housing"
 upper_housing.part.color = Color(0.6, 0.9, 1)
 
-show(all,
-     upper_housing.part
-)
+all = Compound(children=[
+        d1_full, hat, housing_assembly, upper_housing.part
+    ], label="All")
+
+show(all)
 
 #%%
 export_step(all, "wemos_opentherm_assembly.step")
