@@ -1,5 +1,6 @@
 #%% Imports
 import copy
+from matplotlib.transforms import offset_copy
 import numpy as np
 from build123d import *
 from math import radians, tan
@@ -212,7 +213,7 @@ show(all,
     clip_normal_1=(0, -1, 0), clip_slider_1=14.1,
     clip_normal_2=(0, 0, 1), clip_slider_2=6.99)
 
-#%% Upper part of the housing
+#%% Sketches for upper part of the housing
 sketch_plane = Plane.XY.offset(hat.bounding_box().max.Z+clearance)
 with BuildSketch(sketch_plane) as cutouts:
     with Locations(hat_board.part.joints["screw1"].location,
@@ -229,23 +230,33 @@ with BuildSketch(sketch_plane) as upper_housing_outline:
     with Locations(r1_corner):
         Rectangle(corner_cut_x, corner_cut_y, mode=Mode.SUBTRACT,
                   align=(Align.MAX, Align.MAX))
-    fillet(upper_housing_outline.vertices(), 0.4)
+    middle_vertex = upper_housing_outline.vertices().group_by(Axis.X)[1].sort_by(Axis.Y)[0]
+    fillet(middle_vertex, clearance)
+    fillet(upper_housing_outline.vertices() - middle_vertex, wall_thickness+clearance)
 
+with BuildSketch(sketch_plane) as upper_housing_wall:
+    add(upper_housing_outline.sketch)
+    offset(amount=-wall_thickness, mode=Mode.SUBTRACT)
+
+sketch_plane_middle = sketch_plane.offset(-extrude_distance)
+extrude_distance = sketch_plane.location.position.Z - hat_board.part.bounding_box().max.Z - clearance
+with BuildSketch(sketch_plane_middle) as upper_housing_middle:
+    add(upper_housing_wall)
+    with Locations(r1_corner):
+        Rectangle(corner_cut_x+wall_thickness+clearance,
+                  corner_cut_y+wall_thickness+clearance,
+                  mode=Mode.SUBTRACT, align=(Align.MAX, Align.MAX))
+
+show(all, upper_housing_outline.sketch, cutouts.sketch, upper_housing_wall.sketch, upper_housing_middle.sketch)
+#%% Upper part of the housing
+extrude_distance2 = sketch_plane_middle.location.position.Z - housing.part.bounding_box().max.Z
 with BuildPart() as upper_housing:
     with BuildSketch(sketch_plane) as sketch1:
         add(upper_housing_outline.sketch)
         make_hull(cutouts.sketch.edges(), mode=Mode.SUBTRACT)
     extrude(sketch1.sketch, amount=wall_thickness)
-
-    with BuildSketch(sketch_plane) as sketch2_inner:
-        add(upper_housing_outline.sketch)
-        offset(amount=-wall_thickness)
-
-    with BuildSketch(sketch_plane) as sketch2:
-        add(upper_housing_outline.sketch)
-        add(sketch2_inner.sketch, mode=Mode.SUBTRACT)
-    extrude1_distance = sketch_plane.location.position.Z - hat_board.part.bounding_box().max.Z - clearance
-    extrude(sketch2.sketch, amount=-extrude1_distance)
+    extrude(upper_housing_wall.sketch, amount=-extrude_distance)
+    extrude(upper_housing_middle.sketch, amount=-extrude_distance2)
 upper_housing.part.label = "Upper Housing"
 upper_housing.part.color = Color(0.6, 0.9, 1)
 
