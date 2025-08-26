@@ -82,12 +82,12 @@ hat_board.part.color = Color(0.8, 0.6, 0.6)
 
 screw_mocks = {i: copy.copy(screw_mock.part) for i in range(1,3)}
 for i, mock in screw_mocks.items():
-    mock.label = f"screw{i}"
+    mock.label = f"Screw {i}"
     mock.color = hat_board.part.color
     hat_board.part.joints[f"screw{i}"].connect_to(mock.joints["joint"])
 
 bs18b20 = copy.copy(to92_mock.part)
-bs18b20.label = "bs18b20"
+bs18b20.label = "BS18B20"
 bs18b20.color = hat_board.part.color
 hat_board.part.joints["bs18b20"].connect_to(bs18b20.joints["joint"])
 
@@ -193,17 +193,13 @@ with BuildPart() as housing:
 housing.part.label = "Housing"
 housing.part.color = Color(0.6, 0.6, 1)
 
-latch1 = copy.copy(latch.part)
-latch1.label = "Latch 1"
-latch1.color = housing.part.color
-latch2 = copy.copy(latch.part)
-latch2.label = "Latch 2"
-latch2.color = housing.part.color
-# Connect latch to housing
-housing.part.joints["housing_joint_1"].connect_to(latch1.joints["latch_joint"])
-housing.part.joints["housing_joint_2"].connect_to(latch2.joints["latch_joint"])
+latches = {i: copy.copy(latch.part) for i in range(1,3)}
+for i, lt in latches.items():
+    lt.label = f"Latch {i}"
+    lt.color = housing.part.color
+    housing.part.joints[f"housing_joint_{i}"].connect_to(lt.joints["latch_joint"])
 
-housing_assembly = Compound(children=[housing.part, latch1, latch2], label="Housing Assembly")
+housing_assembly = Compound(children=[housing.part] + list(latches.values()), label="Housing Assembly")
 
 show(d1_full, hat, housing_assembly)
 
@@ -232,8 +228,8 @@ with BuildSketch(sketch_plane) as upper_housing_wall:
     add(upper_housing_outline.sketch)
     offset(amount=-wall_thickness, mode=Mode.SUBTRACT)
 
-sketch_plane_middle = sketch_plane.offset(-extrude_distance)
 extrude_distance = sketch_plane.location.position.Z - hat_board.part.bounding_box().max.Z - clearance
+sketch_plane_middle = sketch_plane.offset(-extrude_distance)
 with BuildSketch(sketch_plane_middle) as upper_housing_middle:
     add(upper_housing_wall)
     with Locations(r1_corner):
@@ -253,8 +249,8 @@ with BuildPart() as upper_housing:
     extrude(sketch1.sketch, amount=wall_thickness)
     extrude(upper_housing_wall.sketch, amount=-extrude_distance)
     extrude(upper_housing_middle.sketch, amount=-extrude_distance2)
-    offset(latch1, amount=0.2, mode=Mode.SUBTRACT)
-    offset(latch2, amount=0.2, mode=Mode.SUBTRACT)
+    for lt in latches.values():
+        offset(lt, amount=0.2, mode=Mode.SUBTRACT)
 upper_housing.part.label = "Upper Housing"
 upper_housing.part.color = Color(0.6, 0.9, 1)
 
