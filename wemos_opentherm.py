@@ -1,5 +1,6 @@
 #%% Imports
 import copy
+from textwrap import fill
 import numpy as np
 from build123d import *
 from math import radians, tan
@@ -61,8 +62,8 @@ d1_pcb_measured_thinkness = 1.4
 hat_thickness = 2.0
 hat_distance_from_d1 = 10.5 + d1_pcb_measured_thinkness
 
-screw_pos_back = 4.5
-screw_pos_side = 10
+screw_pos_back = 3.7
+screw_pos_side = 12
 
 with BuildPart() as hat_board:
     with BuildSketch(Plane.XY.offset(hat_distance_from_d1)):
@@ -74,7 +75,7 @@ with BuildPart() as hat_board:
     screw2 = screw1 + Vector(-3.5, 0, 0)
     RigidJoint(label="screw1", joint_location=Location(screw1))
     RigidJoint(label="screw2", joint_location=Location(screw2))
-    bs18b20_location = Location((hat_bbox.max.X-4, hat_bbox.max.Y-3, hat_bbox.max.Z), Axis.Z.direction, 90)
+    bs18b20_location = Location((hat_bbox.max.X-5.5, hat_bbox.max.Y-3, hat_bbox.max.Z), Axis.Z.direction, 90)
     RigidJoint(label="bs18b20", joint_location=bs18b20_location)
 hat_board.part.label = "OpenTherm Hat Board"
 hat_board.part.color = Color(0.8, 0.6, 0.6)
@@ -250,6 +251,9 @@ show(d1_full, hat, housing_assembly,
      upper_housing_outline.sketch, cutouts.sketch,
      upper_housing_wall.sketch, upper_housing_middle.sketch)
 #%% Upper part of the housing
+from hexgrid import hexflake
+flake = hexflake(spacing=6.25, shape=RegularPolygon(2.75, 6, rotation=30), level=2)
+
 extrude_distance2 = sketch_plane_middle.location.position.Z - housing.part.bounding_box().max.Z
 with BuildPart() as upper_housing:
     with BuildSketch(sketch_plane) as sketch1:
@@ -273,6 +277,20 @@ with BuildPart() as upper_housing:
             rect = Rectangle(rect_size.X, cut_height, align=(Align.MIN, Align.MAX))
         fillet(cutout_for_wires.vertices(), 1)
     extrude(cutout_for_wires.sketch, amount=-wall_thickness, mode=Mode.SUBTRACT)
+
+    right_face = upper_housing.faces().sort_by(Axis.X)[-1]
+    with BuildSketch(right_face) as hex1:
+        add(flake)
+        bbsz = right_face.bounding_box().size
+        Rectangle(bbsz.Y-2*wall_thickness, bbsz.Z-2*wall_thickness, mode=Mode.INTERSECT)
+    extrude(hex1.sketch, amount=-wall_thickness, mode=Mode.SUBTRACT)
+
+    left_face = upper_housing.faces().sort_by(Axis.X)[0]
+    with BuildSketch(left_face) as hex2:
+        add(flake)
+        bbsz = left_face.bounding_box().size
+        Rectangle(bbsz.Y-2*wall_thickness, bbsz.Z-2*wall_thickness, mode=Mode.INTERSECT)
+    extrude(hex2.sketch, amount=-wall_thickness, mode=Mode.SUBTRACT)
 
     pegs_plane = sketch_plane_middle.offset(-extrude_distance2)
     with BuildSketch(pegs_plane) as tmp:
@@ -326,3 +344,12 @@ show(all)
 export_step(all, "wemos_opentherm_assembly.step")
 export_step(Compound(housing_assembly), "wemos_opentherm_lower_part.step")
 export_step(Compound(upper_housing_assembly), "wemos_opentherm_upper_part.step")
+#%% Section
+proj = section(upper_housing_assembly, section_by=Plane.XY, height=upper_housing_assembly.bounding_box().max.Z)
+show(proj)
+
+exporter = ExportSVG()
+exporter.add_layer("upper", fill_color=Color(0.5,0.5,0.5))
+exporter.add_shape(proj, layer="upper")
+exporter.write("uppper.svg")
+# %%
