@@ -7,17 +7,16 @@ def hexflake(spacing = 6, shape = RegularPolygon(3, 6, rotation=30), level = 3):
         if level == 0:
             add(shape)
         else:
-            r1 = hexflake(spacing, shape, level-1)
-            add(r1)
-            sp = pow(3,level-1)*spacing
-            with PolarLocations(sp, 6):
-                add(r1)
+            s = hexflake(spacing, shape, level-1)
+            add(s)
+            with PolarLocations(spacing*3**(level-1), 6):
+                add(s)
     return hex.sketch
 
-
-show(hexflake())
-# #%%
+#%%
+# from build123d import ExportSVG, Color
+# hex = hexflake()
 # exporter = ExportSVG()
 # exporter.add_layer("flake", fill_color=Color(0.5,0.5,0.5))
-# exporter.add_shape(hex.sketch, layer="flake")
+# exporter.add_shape(hex, layer="flake")
 # exporter.write("hexflake.svg")
