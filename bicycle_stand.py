@@ -25,7 +25,7 @@ def square_profile(l = 100, d = 30, r = 5, angle = 45):
 show(square_profile())
 
 # %% Bicycle stand
-def bicycle_stand(h = 800, l = 500, b_width = 100, b_height = 5, b_length = 40):
+def bicycle_stand(h = 800, l = 500, b_width = 100, b_height = 2, b_length = 40):
     with BuildPart() as base:
         Box(b_width, b_length, b_height)
         top = base.faces().sort_by(Axis.Z)[-1]
