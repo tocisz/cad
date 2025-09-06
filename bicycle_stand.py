@@ -54,9 +54,9 @@ def bicycle_stand(h = 800, l = 500, b_width = 100, b_height = 2, b_length = 40):
 # bs = bicycle_stand()
 # show(bs)
 ## %% Bicycle stand 2
-def bicycle_stand2(h = 800, l = 500, w = 1500, b_width = 100, b_height = 2, b_length = 40):
+def bicycle_stand2(h = 800, l = 500, w = 1500, d=30):
     with BuildPart() as bottom_builder:
-        p1 = square_profile(w/2)
+        p1 = square_profile(w/2, d=d)
         p1.locate(Location(Vector(Y=w/2), Axis.X.direction, 90))
         p2 = copy.copy(p1)
         p1.joints["flat_out"].connect_to(p2.joints["flat_in"])
@@ -72,7 +72,7 @@ def bicycle_stand2(h = 800, l = 500, w = 1500, b_width = 100, b_height = 2, b_le
     b2.label = "b 2"
 
     with BuildPart() as v1_builder:
-        p1 = square_profile(h/2)
+        p1 = square_profile(h/2, d=d)
         p2 = copy.copy(p1)
         p1.joints["flat_out90"].connect_to(p2.joints["flat_in"])
         add(p1)
@@ -85,7 +85,7 @@ def bicycle_stand2(h = 800, l = 500, w = 1500, b_width = 100, b_height = 2, b_le
     v4.label = "v 4"
 
     with BuildPart() as v2_builder:
-        p1 = square_profile(h/2)
+        p1 = square_profile(h/2, d=d)
         p2 = copy.copy(p1)
         p1.joints["flat_out90l"].connect_to(p2.joints["flat_in"])
         add(p2)
@@ -99,7 +99,7 @@ def bicycle_stand2(h = 800, l = 500, w = 1500, b_width = 100, b_height = 2, b_le
     # v2 = v1.mirror(Plane.YZ) # mirrors only the shape, not the joints
 
     with BuildPart() as h1_builder:
-        p1 = square_profile(l/2)
+        p1 = square_profile(l/2, d=d)
         p2 = copy.copy(p1)
         p1.joints["flat_out"].connect_to(p2.joints["flat_in"])
         add(p1)
@@ -113,7 +113,7 @@ def bicycle_stand2(h = 800, l = 500, w = 1500, b_width = 100, b_height = 2, b_le
     h3 = copy.copy(h1)
     h3.label = "h 3"
 
-    v5 = square_profile(h-30)
+    v5 = square_profile(h-d, d=d)
     v5.label = "v 5"
     v6 = copy.copy(v5)
     v6.label = "v 6"
