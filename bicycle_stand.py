@@ -1,4 +1,5 @@
 #%% Imports
+from operator import le
 from build123d import *
 from ocp_vscode import show
 from math import radians, tan
@@ -133,5 +134,12 @@ def bicycle_stand2(h = 800, l = 500, w = 1500, d=30):
 
 bs = bicycle_stand2()
 show(bs)
+#%% Total length
+lengths = [max(c.bounding_box().size) for c in bs.children]
+lengths.sort()
+lengths
+#%%
+sum(lengths)
+
 # %% Export STEP
 export_step(bs, "bicycle_stand.step")
