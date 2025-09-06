@@ -1,5 +1,4 @@
 #%% Imports
-from operator import le
 from build123d import *
 from ocp_vscode import show
 from math import radians, tan
@@ -19,8 +18,8 @@ def square_profile(l = 100, d = 30, r = 5, angle = 45):
             Rectangle(2*d, 2*d)
         extrude(cut.sketch, 2*d, mode=Mode.SUBTRACT)
         RigidJoint(label="flat_out", joint_location=top.center_location)
-        RigidJoint(label="flat_out90", joint_location=top.center_location * Rot(Z=-90))
-        RigidJoint(label="flat_out90l", joint_location=top.center_location * Rot(Z=90)) # what's the problem?
+        RigidJoint(label="flat_out90l", joint_location=top.center_location * Rot(Z=-90))
+        RigidJoint(label="flat_out90r", joint_location=top.center_location * Rot(Z=90)) # what's the problem?
         RigidJoint(label="flat_in", joint_location=top.center_location * Rot(Y=180))
         RigidJoint(label="angle_out", joint_location=cut_plane.location)
         RigidJoint(label="angle_in", joint_location=cut_plane.location * Rot(Y=180))
@@ -28,8 +27,8 @@ def square_profile(l = 100, d = 30, r = 5, angle = 45):
 
 pp = square_profile()
 pp2 = copy.copy(pp)
-pp.joints["flat_out90"].connect_to(pp2.joints["flat_in"])
-show(pp, pp2, pp.joints["flat_out90"].location)
+pp.joints["flat_out90l"].connect_to(pp2.joints["flat_in"])
+show(pp, pp2, pp.joints["flat_out90l"].location)
 
 # %% Bicycle stand
 def bicycle_stand(h = 800, l = 500, b_width = 100, b_height = 2, b_length = 40):
@@ -75,7 +74,7 @@ def bicycle_stand2(h = 800, l = 500, w = 1500, d=30):
     with BuildPart() as v1_builder:
         p1 = square_profile(h/2, d=d)
         p2 = copy.copy(p1)
-        p1.joints["flat_out90"].connect_to(p2.joints["flat_in"])
+        p1.joints["flat_out90l"].connect_to(p2.joints["flat_in"])
         add(p1)
         add(p2)
         RigidJoint(label="angle1_in", joint_location=p2.joints["angle_in"].location)
@@ -88,7 +87,7 @@ def bicycle_stand2(h = 800, l = 500, w = 1500, d=30):
     with BuildPart() as v2_builder:
         p1 = square_profile(h/2, d=d)
         p2 = copy.copy(p1)
-        p1.joints["flat_out90l"].connect_to(p2.joints["flat_in"])
+        p1.joints["flat_out90r"].connect_to(p2.joints["flat_in"])
         add(p2)
         add(p1, clean=False)
         RigidJoint(label="angle1_in", joint_location=p2.joints["angle_in"].location)
