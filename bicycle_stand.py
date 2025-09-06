@@ -56,14 +56,14 @@ def bicycle_stand(h = 800, l = 500, b_width = 100, b_height = 2, b_length = 40):
 ## %% Bicycle stand 2
 def bicycle_stand2(h = 800, l = 500, w = 1500, b_width = 100, b_height = 2, b_length = 40):
     with BuildPart() as bottom_builder:
-        bt1r = square_profile(w/2)
-        bt1r.locate(Location(Vector(Y=w/2), Axis.X.direction, 90))
-        bt1l = copy.copy(bt1r)
-        bt1r.joints["flat_out"].connect_to(bt1l.joints["flat_in"])
-        add(bt1r)
-        add(bt1l)
-        RigidJoint(label="angle1_out", joint_location=bt1r.joints["angle_out"].location)
-        RigidJoint(label="angle2_in", joint_location=bt1l.joints["angle_in"].location)
+        p1 = square_profile(w/2)
+        p1.locate(Location(Vector(Y=w/2), Axis.X.direction, 90))
+        p2 = copy.copy(p1)
+        p1.joints["flat_out"].connect_to(p2.joints["flat_in"])
+        add(p1)
+        add(p2)
+        RigidJoint(label="angle1_out", joint_location=p1.joints["angle_out"].location)
+        RigidJoint(label="angle2_in", joint_location=p2.joints["angle_in"].location)
         top = bottom_builder.faces().sort_by(Axis.Z)[-1]
         RigidJoint(label="center", joint_location=top.center_location)
     b1 = bottom_builder.part
@@ -72,41 +72,41 @@ def bicycle_stand2(h = 800, l = 500, w = 1500, b_width = 100, b_height = 2, b_le
     b2.label = "b 2"
 
     with BuildPart() as v1_builder:
-        v1u = square_profile(h/2)
-        v1d = copy.copy(v1u)
-        v1u.joints["flat_out90"].connect_to(v1d.joints["flat_in"])
-        add(v1u)
-        add(v1d)
-        RigidJoint(label="angle1_in", joint_location=v1d.joints["angle_in"].location)
-        RigidJoint(label="angle2_out", joint_location=v1u.joints["angle_out"].location)
+        p1 = square_profile(h/2)
+        p2 = copy.copy(p1)
+        p1.joints["flat_out90"].connect_to(p2.joints["flat_in"])
+        add(p1)
+        add(p2)
+        RigidJoint(label="angle1_in", joint_location=p2.joints["angle_in"].location)
+        RigidJoint(label="angle2_out", joint_location=p1.joints["angle_out"].location)
     v1 = v1_builder.part
     v1.label = "v 1"
     v4 = copy.copy(v1)
     v4.label = "v 4"
 
     with BuildPart() as v2_builder:
-        v1u = square_profile(h/2)
-        v1d = copy.copy(v1u)
-        v1u.joints["flat_out90l"].connect_to(v1d.joints["flat_in"])
-        add(v1d)
-        add(v1u, clean=False)
-        RigidJoint(label="angle1_in", joint_location=v1d.joints["angle_in"].location)
-        RigidJoint(label="angle2_out", joint_location=v1u.joints["angle_out"].location)
+        p1 = square_profile(h/2)
+        p2 = copy.copy(p1)
+        p1.joints["flat_out90l"].connect_to(p2.joints["flat_in"])
+        add(p2)
+        add(p1, clean=False)
+        RigidJoint(label="angle1_in", joint_location=p2.joints["angle_in"].location)
+        RigidJoint(label="angle2_out", joint_location=p1.joints["angle_out"].location)
     v2 = v2_builder.part
     v2.label = "v 2"
     v3 = copy.copy(v2)
     v3.label = "v 3"
     # v2 = v1.mirror(Plane.YZ) # mirrors only the shape, not the joints
 
-    with BuildPart() as h1b:
-        h1 = square_profile(l/2)
-        h2 = copy.copy(h1)
-        h1.joints["flat_out"].connect_to(h2.joints["flat_in"])
-        add(h1)
-        add(h2)
-        RigidJoint(label="angle1_in", joint_location=h1.joints["angle_in"].location)
-        RigidJoint(label="angle2_out", joint_location=h2.joints["angle_out"].location)
-    h1 = h1b.part
+    with BuildPart() as h1_builder:
+        p1 = square_profile(l/2)
+        p2 = copy.copy(p1)
+        p1.joints["flat_out"].connect_to(p2.joints["flat_in"])
+        add(p1)
+        add(p2)
+        RigidJoint(label="angle1_in", joint_location=p1.joints["angle_in"].location)
+        RigidJoint(label="angle2_out", joint_location=p2.joints["angle_out"].location)
+    h1 = h1_builder.part
     h1.label = "h 1"
     h2 = copy.copy(h1)
     h2.label = "h 2"
