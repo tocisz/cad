@@ -94,3 +94,17 @@ show(sub.sketch)
 with BuildSketch() as scb:
     add(srb.sketch.mirror(mirror_xy_plane))
 show(scb.sketch)
+#%%
+with BuildSketch() as sdzb:
+    with BuildLine():
+        v1 = cx.position + Vector(-1/6, 1/6)
+        v2 = cx.position - Vector(-1/6, 1/6)
+        Polyline([(0,0),v1,v2,(1,1)])
+    make_face()
+    offset(amount=LW)
+show(sdzb.sketch)
+#%%
+with BuildSketch() as sxb:
+    add(sdzb.sketch.mirror(mirror_xy_plane))
+show(sxb.sketch)
+# %%
