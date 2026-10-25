@@ -75,11 +75,9 @@ RECT_C = ((RECT_WEST + RECT_EAST) / 2, (RECT_SOUTH + RECT_NORTH) / 2)
 RECT_W, RECT_H = RECT_EAST - RECT_WEST, RECT_NORTH - RECT_SOUTH
 # extra screw hole: exactly midway between the two base holes
 MID_HOLE_C = SLOT_MID
-MID_HOLE_R = HOLE_R  # same screw as the outer holes
 # counterbore for the screw head, cut from the gusset slope downward
 CBORE_R = 5.0  # 10 mm dia recess for a 9 mm head
-CBORE_BOTTOM = 4.5  # flat bottom height (about mid gusset at x=38)
-HOLE_CLEAR = 1.0  # clearance below the base for the through-hole cut
+CBORE_BOTTOM = BASE_H  # same screw-head bearing height as the outer holes
 
 # simplified holder: keep the exact bar slot, but derive its outside from
 # the base instead of carrying over all fitted outer-fillet constants
@@ -168,11 +166,6 @@ def pax_bar_holder():
             with Locations(MID_HOLE_C):
                 Circle(CBORE_R)
         extrude(amount=GUS_Z1 - CBORE_BOTTOM, mode=Mode.SUBTRACT)
-        # through-hole for the middle screw shank (base already has it).
-        with BuildSketch(Plane.XY.offset(-HOLE_CLEAR)):
-            with Locations(MID_HOLE_C):
-                Circle(MID_HOLE_R)
-        extrude(amount=GUS_Z1 + HOLE_CLEAR, mode=Mode.SUBTRACT)
     model.part.label = "IKEA PAX bar holder, simplified mid-hole variant"
     return model.part
 
