@@ -15,35 +15,52 @@ triangle artefacts of the STL disappear.
 Units: STL units = mm.
 """
 # %% Imports
+import math
+
 from build123d import *
 from ocp_vscode import show
 
 # %% Dimensions (mm), from fitted STL boundary loops
+#
+# Only fitted values are hardcoded once; everything else is derived below,
+# so each dimension has a single source of truth.
 BASE_H = 3.5
-HOLDER_H = 15.0  # 3.5 -> 18.5
+TOP_Z = 18.5
+HOLDER_H = TOP_Z - BASE_H  # 3.5 -> 18.5
 
-# base outline (footprint, z = 0)
+R_OUTER = 14.0  # base SW/NW arcs and holder top/bottom arcs
+R_EAST = 11.0  # base NE/SE arcs
+R_SMALL = 9.0  # base N/S-small arcs and bar-seat slot
+
+# shared centres: footprint origin doubles as holder bottom centre,
+# seat height doubles as base NW / slot / top centre
+BOT_C = (0.0, 0.0)
+SEAT_C = (0.0, 18.0)
+BASE_SW_C = BOT_C
+BASE_NW_C = SEAT_C
+SLOT_C = SEAT_C
+TOP_C = SEAT_C
+BASE_SW_R = R_OUTER
+BASE_NW_R = R_OUTER
+BOT_R = R_OUTER
+TOP_R = R_OUTER
+SLOT_R = R_SMALL  # inner semicircle: the bar seat
+
+# base outline (footprint, z = 0): fitted centres/radii, each stated once
 BASE_NE_C = (38.0, 41.0)
-BASE_NE_R = 11.0
 BASE_SE_C = (38.0, -23.0)
-BASE_SE_R = 11.0
-BASE_NS_C = (18.0, 41.0)  # N-small arc centre (also S-small y=-23)
-BASE_NS_R = 9.0
-BASE_SW_C = (0.0, 0.0)
-BASE_SW_R = 14.0
-BASE_NW_C = (0.0, 18.0)
-BASE_NW_R = 14.0
-HOLE_CENTRES = ((38.0, 41.0), (38.0, -23.0))
+BASE_NE_R = R_EAST
+BASE_SE_R = R_EAST
+BASE_NS_X = 18.0
+BASE_NS_C = (BASE_NS_X, BASE_NE_C[1])  # N-small arc centre
+BASE_SSMALL_C = (BASE_NS_X, BASE_SE_C[1])  # S-small arc centre
+BASE_NS_R = R_SMALL
+HOLE_CENTRES = (BASE_NE_C, BASE_SE_C)
 HOLE_R = 3.25
 
-# holder outline (bar-seat profile, z = 3.5..18.5)
-SLOT_C = (0.0, 18.0)
-SLOT_R = 9.0      # inner semicircle: the bar seat
-TOP_C = (0.0, 18.0)
-TOP_R = 14.0      # outer top semicircle
-BOT_C = (0.0, 0.0)
-BOT_R = 14.0      # outer bottom circle (legs)
-LEG_X = 9.0
+# holder outline (bar-seat profile, z = 3.5..18.5): fitted fillets kept,
+# shared circles/axes derived above
+LEG_X = SLOT_R
 LEG_Y = -5.294850839  # inner leg bottom (slot opening)
 FIL_E_C = (10.915282195687096, -4.521257921607456)
 FIL_E_R = 2.065611747409030
@@ -53,13 +70,23 @@ FIL_W_C = (-11.027479153399675, -5.294850838344032)
 FIL_W_R = 2.027479153561825
 FIL_W_A0 = -122.752084492399
 FIL_W_SWEEP = 122.752084473861
-BRIDGE_E = (12.823658611, -5.311733316)   # fillet end (-22.5 deg)
-BRIDGE_B = (13.522961568, -3.623466631)   # outer circle point (-15 deg)
+BRIDGE_E_ANG = -22.5  # fillet-end angle on FIL_E circle
+BRIDGE_B_ANG = -15.0  # bridge angle on the outer BOT_C circle
+BRIDGE_E = (  # fillet end, on the FIL_E circle
+    FIL_E_C[0] + FIL_E_R * math.cos(math.radians(BRIDGE_E_ANG)),
+    FIL_E_C[1] + FIL_E_R * math.sin(math.radians(BRIDGE_E_ANG)),
+)
+BRIDGE_B = (  # outer circle point at BRIDGE_B_ANG
+    BOT_C[0] + BOT_R * math.cos(math.radians(BRIDGE_B_ANG)),
+    BOT_C[1] + BOT_R * math.sin(math.radians(BRIDGE_B_ANG)),
+)
+W_OUTER_SWEEP = 30.0  # outer arc from 180 deg up to the west fillet
 
-# gusset (diagonal brace, wall y = 0..18)
-GUS_X0, GUS_X1 = 14.0, 49.0
-GUS_Z0, GUS_Z1 = 3.5, 18.5
-GUS_Y0, GUS_Y1 = 0.0, 18.0
+# gusset (diagonal brace, wall y = 0..18), derived from the part envelope
+GUS_X0 = R_OUTER  # inner edge under the holder legs (x=14)
+GUS_X1 = BASE_SE_C[0] + R_EAST  # outer edge flush with the base east (38+11)
+GUS_Z0, GUS_Z1 = BASE_H, TOP_Z
+GUS_Y0, GUS_Y1 = BOT_C[1], SEAT_C[1]
 
 
 # %% Sketches
@@ -67,16 +94,19 @@ def base_sketch():
     """Footprint of the part with two true-circle screw holes."""
     with BuildSketch() as sec:
         with BuildLine():
-            CenterArc((18.0, 41.0), 9.0, 0.0, -90.0)      # N-small -> (18, 32)
-            Line((18.0, 32.0), (0.0, 32.0))               # north straight
-            CenterArc((0.0, 18.0), 14.0, 90.0, 90.0)      # NW quarter -> (-14, 18)
-            Line((-14.0, 18.0), (-14.0, 0.0))             # west straight
-            CenterArc((0.0, 0.0), 14.0, 180.0, 90.0)      # SW quarter -> (0, -14)
-            Line((0.0, -14.0), (18.0, -14.0))             # south straight
-            CenterArc((18.0, -23.0), 9.0, 90.0, -90.0)    # S-small -> (27, -23)
-            CenterArc((38.0, -23.0), 11.0, 180.0, 180.0)  # SE semicircle -> (49, -23)
-            Line((49.0, -23.0), (49.0, 41.0))             # east straight
-            CenterArc((38.0, 41.0), 11.0, 0.0, 180.0)     # NE semicircle -> (27, 41)
+            # All arcs first, then @-to-@ straights bridge arc endpoints.
+            n_small = CenterArc(BASE_NS_C, BASE_NS_R, 0.0, -90.0)
+            nw = CenterArc(BASE_NW_C, BASE_NW_R, 90.0, 90.0)
+            sw = CenterArc(BASE_SW_C, BASE_SW_R, 180.0, 90.0)
+            s_small = CenterArc(BASE_SSMALL_C, BASE_NS_R, 90.0, -90.0)
+            se = CenterArc(BASE_SE_C, BASE_SE_R, 180.0, 180.0)
+            ne = CenterArc(BASE_NE_C, BASE_NE_R, 0.0, 180.0)
+            Line(n_small @ 1, nw @ 0)
+            Line(nw @ 1, sw @ 0)
+            Line(sw @ 1, s_small @ 0)
+            Line(s_small @ 1, se @ 0)
+            Line(se @ 1, ne @ 0)
+            Line(ne @ 1, n_small @ 0)
         make_face()
         with Locations(*HOLE_CENTRES):
             Circle(HOLE_R, mode=Mode.SUBTRACT)
@@ -87,31 +117,28 @@ def holder_sketch():
     """Bar-seat profile: inner slot, fillets, tangent bridge, outer arcs."""
     with BuildSketch(Plane.XY.offset(BASE_H)) as sec:
         with BuildLine():
-            Line((-LEG_X, LEG_Y), (-LEG_X, 18.0))            # west inner leg up
-            CenterArc(SLOT_C, SLOT_R, 180.0, -180.0)         # bar seat via (0, 27)
-            Line((LEG_X, 18.0), (LEG_X, LEG_Y))              # east inner leg down
-            CenterArc(FIL_E_C, FIL_E_R, FIL_E_A0, FIL_E_SWEEP)  # east fillet
-            Line(BRIDGE_E, BRIDGE_B)                         # tangent bridge
-            CenterArc(BOT_C, BOT_R, -15.0, 15.0)             # outer arc -> (14, 0)
-            Line((14.0, 0.0), (14.0, 18.0))                  # east outer vertical
-            CenterArc(TOP_C, TOP_R, 0.0, 180.0)              # outer top semicircle
-            Line((-14.0, 18.0), (-14.0, 0.0))                # west outer vertical
-            CenterArc(BOT_C, BOT_R, 180.0, 30.0)             # outer arc -> (-12.12, -7)
-            CenterArc(FIL_W_C, FIL_W_R, FIL_W_A0, FIL_W_SWEEP)  # west fillet
+            # All arcs first, then @-to-@ straights bridge arc endpoints.
+            seat = CenterArc(SLOT_C, SLOT_R, 180.0, -180.0)
+            fil_e = CenterArc(FIL_E_C, FIL_E_R, FIL_E_A0, FIL_E_SWEEP)
+            outer_e = CenterArc(BOT_C, BOT_R, BRIDGE_B_ANG, -BRIDGE_B_ANG)
+            top = CenterArc(TOP_C, TOP_R, 0.0, 180.0)
+            outer_w = CenterArc(BOT_C, BOT_R, 180.0, W_OUTER_SWEEP)
+            fil_w = CenterArc(FIL_W_C, FIL_W_R, FIL_W_A0, FIL_W_SWEEP)
+            Line(seat @ 0, fil_w @ 1)  # west inner leg
+            Line(seat @ 1, fil_e @ 0)  # east inner leg
+            Line(fil_e @ 1, outer_e @ 0)  # tangent bridge
+            Line(outer_e @ 1, top @ 0)  # east outer vertical
+            Line(top @ 1, outer_w @ 0)  # west outer vertical
+            Line(outer_w @ 1, fil_w @ 0)  # closes the loop
         make_face()
     return sec.sketch
 
 
-def gusset_sketch():
-    """Diagonal brace under the holder overhang (side profile, y 0..18)."""
-    # Note: Plane.XZ normal is -Y, so offset(0) + extrude(-18) spans y 0..18.
-    with BuildSketch(Plane.XZ.offset(GUS_Y0)) as sec:
-        with BuildLine():
-            Line((GUS_X0, GUS_Z0), (GUS_X1, GUS_Z0))
-            Line((GUS_X1, GUS_Z0), (GUS_X0, GUS_Z1))
-            Line((GUS_X0, GUS_Z1), (GUS_X0, GUS_Z0))
-        make_face()
-    return sec.sketch
+def gusset_profile():
+    """Diagonal brace triangle (side profile); draws the current wire."""
+    base = Line((GUS_X0, GUS_Z0), (GUS_X1, GUS_Z0))
+    Line(base @ 1, (GUS_X0, GUS_Z1))  # hypotenuse up to the holder top
+    Line((GUS_X0, GUS_Z1), base @ 0)  # inner vertical back to the start
 
 
 # %% Model
@@ -126,9 +153,7 @@ def pax_bar_holder():
         # along Z instead of Y).
         with BuildSketch(Plane.XZ.offset(GUS_Y0)):
             with BuildLine():
-                Line((GUS_X0, GUS_Z0), (GUS_X1, GUS_Z0))
-                Line((GUS_X1, GUS_Z0), (GUS_X0, GUS_Z1))
-                Line((GUS_X0, GUS_Z1), (GUS_X0, GUS_Z0))
+                gusset_profile()
             make_face()
         extrude(amount=-(GUS_Y1 - GUS_Y0))
     model.part.label = "IKEA PAX bar holder"
