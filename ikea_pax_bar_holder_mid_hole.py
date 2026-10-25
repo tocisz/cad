@@ -36,35 +36,41 @@ R_EAST = 11.0  # base NE/SE arcs
 R_SMALL = 9.0  # base N/S-small arcs and bar-seat slot
 
 # shared centres: footprint origin doubles as holder bottom centre,
-# seat height doubles as base NW / slot / top centre
+# seat height doubles as slot / top centre
 BOT_C = (0.0, 0.0)
 SEAT_C = (0.0, 18.0)
-BASE_SW_C = BOT_C
-BASE_NW_C = SEAT_C
 SLOT_C = SEAT_C
 TOP_C = SEAT_C
-BASE_SW_R = R_OUTER
-BASE_NW_R = R_OUTER
 BOT_R = R_OUTER
 TOP_R = R_OUTER
 SLOT_R = R_SMALL  # inner semicircle: the bar seat
 
-# base outline (footprint, z = 0): fitted centres/radii, each stated once
+# base outline (footprint, z = 0): a rounded rectangle on the west plus a
+# rounded slot on the east; the slot/rect junctions get small fillets.
+# Fitted screw-hole centres, each stated once.
 BASE_NE_C = (38.0, 41.0)
 BASE_SE_C = (38.0, -23.0)
-BASE_NE_R = R_EAST
-BASE_SE_R = R_EAST
-BASE_NS_X = 18.0
-BASE_NS_C = (BASE_NS_X, BASE_NE_C[1])  # N-small arc centre
-BASE_SSMALL_C = (BASE_NS_X, BASE_SE_C[1])  # S-small arc centre
-BASE_NS_R = R_SMALL
 HOLE_CENTRES = (BASE_NE_C, BASE_SE_C)
 HOLE_R = 3.25
-# extra screw hole: exactly midway between the two base holes
-MID_HOLE_C = (
+# east slot: axis through the screw holes, tips flush with the east arcs
+SLOT_W = 2 * R_EAST
+SLOT_MID = (
     (HOLE_CENTRES[0][0] + HOLE_CENTRES[1][0]) / 2,
     (HOLE_CENTRES[0][1] + HOLE_CENTRES[1][1]) / 2,
 )
+SLOT_LEN = (BASE_NE_C[1] + R_EAST) - (BASE_SE_C[1] - R_EAST)
+# west rounded rectangle: x from the outer radius to the slot's east wall
+# (rounded east corners hide inside the slot), y from the southern outer
+# tangent to the northern small-arc tangent
+RECT_WEST = SEAT_C[0] - R_OUTER
+RECT_SOUTH = BOT_C[1] - R_OUTER
+RECT_NORTH = BASE_NE_C[1] - R_SMALL
+RECT_EAST = SLOT_MID[0] + SLOT_W / 2  # slot's east wall
+JUNC_X = SLOT_MID[0] - SLOT_W / 2  # slot's west wall: rect/slot junction axis
+RECT_C = ((RECT_WEST + RECT_EAST) / 2, (RECT_SOUTH + RECT_NORTH) / 2)
+RECT_W, RECT_H = RECT_EAST - RECT_WEST, RECT_NORTH - RECT_SOUTH
+# extra screw hole: exactly midway between the two base holes
+MID_HOLE_C = SLOT_MID
 MID_HOLE_R = HOLE_R  # same screw as the outer holes
 # counterbore for the screw head, cut from the gusset slope downward
 CBORE_R = 5.0  # 10 mm dia recess for a 9 mm head
@@ -104,23 +110,23 @@ GUS_Y0, GUS_Y1 = BOT_C[1], SEAT_C[1]
 
 # %% Sketches
 def base_sketch():
-    """Footprint of the part with three true-circle screw holes."""
+    """Footprint: west rounded rectangle + east slot, junctions filleted."""
     with BuildSketch() as sec:
-        with BuildLine():
-            # All arcs first, then @-to-@ straights bridge arc endpoints.
-            n_small = CenterArc(BASE_NS_C, BASE_NS_R, 0.0, -90.0)
-            nw = CenterArc(BASE_NW_C, BASE_NW_R, 90.0, 90.0)
-            sw = CenterArc(BASE_SW_C, BASE_SW_R, 180.0, 90.0)
-            s_small = CenterArc(BASE_SSMALL_C, BASE_NS_R, 90.0, -90.0)
-            se = CenterArc(BASE_SE_C, BASE_SE_R, 180.0, 180.0)
-            ne = CenterArc(BASE_NE_C, BASE_NE_R, 0.0, 180.0)
-            Line(n_small @ 1, nw @ 0)
-            Line(nw @ 1, sw @ 0)
-            Line(sw @ 1, s_small @ 0)
-            Line(s_small @ 1, se @ 0)
-            Line(se @ 1, ne @ 0)
-            Line(ne @ 1, n_small @ 0)
-        make_face()
+        with Locations(Location(RECT_C)):
+            RectangleRounded(RECT_W, RECT_H, R_OUTER)
+        with Locations(Location(SLOT_MID)):
+            SlotOverall(SLOT_LEN, SLOT_W, rotation=90)
+        # Concave rect/slot junctions get the small radius; they sit at
+        # (JUNC_X, RECT_NORTH/SOUTH), distinct from the slot-tip corners
+        # at the same x.
+        junc = sec.vertices().filter_by(
+            lambda v: abs(v.center().X - JUNC_X) < 1e-6
+            and (
+                abs(v.center().Y - RECT_NORTH) < 1e-6
+                or abs(v.center().Y - RECT_SOUTH) < 1e-6
+            )
+        )
+        fillet(junc.sort_by(Axis.Y), radius=R_SMALL)
         with Locations(*HOLE_CENTRES, MID_HOLE_C):
             Circle(HOLE_R, mode=Mode.SUBTRACT)
     return sec.sketch
